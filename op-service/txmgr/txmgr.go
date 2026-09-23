@@ -928,11 +928,14 @@ func (m *SimpleTxManager) queryReceipt(ctx context.Context, txHash common.Hash, 
 
 	m.metr.RecordBaseFee(tip.BaseFee)
 
-	if blobFee, err := m.backend.BlobBaseFee(ctx); err != nil {
-		m.metr.RPCError()
-		m.l.Warn("Unable to fetch blob base fee", "err", err)
-	} else {
-		m.metr.RecordBlobBaseFee(blobFee)
+	// pDai patch: no blob market before Cancun (PulseChain 369) — see estimator.go.
+	if tip.ExcessBlobGas != nil {
+		if blobFee, err := m.backend.BlobBaseFee(ctx); err != nil {
+			m.metr.RPCError()
+			m.l.Warn("Unable to fetch blob base fee", "err", err)
+		} else {
+			m.metr.RecordBlobBaseFee(blobFee)
+		}
 	}
 
 	m.l.Debug("Transaction mined, checking confirmations", "tx", txHash,
